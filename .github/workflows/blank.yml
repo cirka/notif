@@ -26,7 +26,11 @@ jobs:
       - name: Setup SSH Agent
         uses: webfactory/ssh-agent@v0.10.1
         with:
-        ssh-private-key: ${{ secrets.SSH_KEY }}
+          ssh-private-key: ${{ secrets.SSH_KEY }}
       # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world! > some ; echo $?
+      - name: Run a one-line script on remote host
+        run: |
+          ssh -o StrictHostKeyChecking=no root@DST_HOST << 'EOF'
+            echo "git pull origin ${{ github.ref }}" > whatif
+            echo $?
+          EOF
