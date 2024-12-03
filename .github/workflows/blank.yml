@@ -34,3 +34,5 @@ jobs:
             echo "git pull origin ${{ github.ref }}" > whatif
             echo $?
           EOF
+        with:
+          DST_HOST: ${{ secrets.DST_HOST }}
