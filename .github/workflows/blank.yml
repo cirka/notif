@@ -30,9 +30,7 @@ jobs:
       # Runs a single command using the runners shell
       - name: Run a one-line script on remote host
         run: |
-          ssh -o StrictHostKeyChecking=no root@DST_HOST << 'EOF'
+          ssh -o StrictHostKeyChecking=no root@${{ secrets.DST_HOST }} << 'EOF'
             echo "git pull origin ${{ github.ref }}" > whatif
             echo $?
           EOF
-        with:
-          DST_HOST: ${{ secrets.DST_HOST }}
