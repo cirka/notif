@@ -1,3 +1,4 @@
+name: remote_touch
 on:
   # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
@@ -15,7 +16,7 @@ jobs:
      - name: install openvpn
        run: |
          sudo apt-get update
-         sudo apt-get --assume-yes --no-install-recomends install openvpn
+         sudo apt-get --assume-yes --no-install-recommends install openvpn
 
      - name: start tunnel
        run: echo ${{ secrets.OVPN_CONFIG }} | sudo openvpn --daemon --log "vpn.log" /dev/stdin
