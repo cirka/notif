@@ -19,7 +19,7 @@ jobs:
          sudo apt-get --assume-yes --no-install-recommends install openvpn
 
      - name: start tunnel
-       run: echo ${{ secrets.OVPN_CONFIG }} | sudo openvpn --daemon --log "vpn.log" /dev/stdin
+       run: echo "${{ secrets.OVPN_CONFIG }}" | sudo openvpn --daemon --log "vpn.log" /dev/stdin
        
      - name: wait for vpn up
        timeout-minutes: 1
