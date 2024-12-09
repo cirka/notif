@@ -1,0 +1,43 @@
+on:
+  # Triggers the workflow on push or pull request events but only for the "main" branch
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+jobs:
+ deploy:
+   runs-on: ubuntu-latest
+   steps:
+     - name: install openvpn
+       run: | sudo apt-get update
+              sudo apt-get --assume-yes --no-install-recomends install openvpn
+
+     - name: start tunnel
+       run: echo ${{ secret.OVPN_CONFIG }} | sudo openvpn --daemon --log "vpn.log" /dev/stdin
+       
+     - name: wait for vpn up
+       timeout-minutes: 1
+       run: until ping -c1 192.168.135.160; do sleep 5; done
+
+     - uses: actions/checkout@v4
+     - name: Setup SSH Agent
+       uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.R_SSH_KEY }}
+          
+     - name: deploy updates
+       run: |
+         ssh  -o StrictHostKeyChecking=no ubuntu@${{ secrets.R_IP }} << 'EOF'
+           touch tck
+         EOF
+     - name: kill tunnel
+       run: |
+         sudo chmod 777 vpn.log
+         sudo killall openvpn
+    
+        
+       
+      
