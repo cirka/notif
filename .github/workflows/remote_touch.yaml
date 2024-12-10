@@ -29,14 +29,22 @@ jobs:
        with:
          ssh-private-key: ${{ secrets.R_SSH_KEY }}
           
-     - name: deploy updates
+     - name: deploy taged updates
        run: |
          ssh  -o StrictHostKeyChecking=no ubuntu@${{ secrets.R_IP }} << 'EOF'
            sudo systemctl disable rc2_demo_restart.timer
            sudo systemctl stop rc2_demo
+           timestamp=$(date -Iseconds)
+           echo "$timestamp ref=${{ github.ref }} ref_name=${{github.ref_name}}" >> CD_action.log
            cd RC2-hub
-           echo "git fetch -p -P" > git_cmds
-           echo "git checkout ${{ github.ref }} " >> git_cmds
+           git fetch -p -P
+           ref=${{github.ref}}
+           if [[ ref == "refs/tags"* ]] ; then
+           echo "git checkout ${{github.ref_name}}" > action 
+           fi
+           if [[ ref == "refs/heads"* ]] ; then
+            echo "git checkout refs/remotes/origin/${{github.ref_name}}" > action
+           fi
            sudo systemctl start rc2_demo
            sudo systemctl enable rc2_demo_restart.timer
          EOF
