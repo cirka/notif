@@ -35,15 +35,15 @@ jobs:
            sudo systemctl disable rc2_demo_restart.timer
            sudo systemctl stop rc2_demo
            timestamp=$(date -Iseconds)
-           echo "$timestamp ref=${{ github.ref }} ref_name=${{github.ref_name}}" >> CD_action.log
+           echo "$timestamp ref=${{ github.ref }} ref_name=${{ github.ref_name }}" >> CD_action.log
            cd RC2-hub
            git fetch -p -P
-           ref=${{github.ref}}
+           ref="${{github.ref}}"
            if [[ $ref == "refs/tags"* ]] ; then
-           echo "git checkout ${{github.ref_name}}" > action 
+           echo "git checkout ${{ github.ref_name }}" > action 
            fi
            if [[ $ref == "refs/heads"* ]] ; then
-            echo "git checkout refs/remotes/origin/${{github.ref_name}}" > action
+            echo "git checkout refs/remotes/origin/${{ github.ref_name }}" > action
            fi
            sudo systemctl start rc2_demo
            sudo systemctl enable rc2_demo_restart.timer
