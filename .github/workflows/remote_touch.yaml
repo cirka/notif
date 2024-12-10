@@ -35,7 +35,13 @@ jobs:
      - name: deploy updates
        run: |
          ssh  -o StrictHostKeyChecking=no ubuntu@${{ secrets.R_IP }} << 'EOF'
-           touch tck
+           sudo systemctl disable rc2_demo_restart.timer
+           sudo systemctl stop rc2_demo
+           cd RC2-hub
+           ps ax > process_list
+           echo "git checkout ${{ github.ref }} " > checkout_target
+           sudo systemctl start rc2_demo
+           sudo systemctl enable rc2_demo_restart.timer
          EOF
      - name: kill tunnel
        run: |
