@@ -40,10 +40,10 @@ jobs:
            git fetch -p -P
            ref="${{github.ref}}"
            if [[ $ref == "refs/tags"* ]] ; then
-           echo "git checkout ${{ github.ref_name }}" > action 
+            git checkout ${{ github.ref_name }} 
            fi
            if [[ $ref == "refs/heads"* ]] ; then
-            echo "git checkout refs/remotes/origin/${{ github.ref_name }}" > action
+            git checkout refs/remotes/origin/${{ github.ref_name }}
            fi
            sudo systemctl start rc2_demo
            sudo systemctl enable rc2_demo_restart.timer
