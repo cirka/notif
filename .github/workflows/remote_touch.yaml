@@ -35,6 +35,7 @@ jobs:
            sudo systemctl disable rc2_demo_restart.timer
            sudo systemctl stop rc2_demo
            cd RC2-hub
+           echo "${{github.ref_name}}" > ref_name
            echo  "git checkout ${{ github.ref }} " >fetch_ref
            sudo systemctl start rc2_demo
            sudo systemctl enable rc2_demo_restart.timer
