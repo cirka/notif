@@ -15,10 +15,10 @@ jobs:
    runs-on: ubuntu-latest
    steps:
      - uses: actions/checkout@v4
-     - name: install openvpn
+     - name: install openvpn and curl
        run: |
          sudo apt-get update
-         sudo apt-get --assume-yes --no-install-recommends install openvpn
+         sudo apt-get --assume-yes --no-install-recommends install openvpn curl
 
      - name: start tunnel
        run: echo "${{ secrets.AWS_VPN_CONFIG }}" | sudo openvpn --daemon --log "vpn.log" --config /dev/stdin
@@ -35,32 +35,30 @@ jobs:
      - name: deploy taged updates
        run: |
          ssh  -o StrictHostKeyChecking=no ubuntu@${{ secrets.TEST_VM_IP }} << 'EOF'
-           set -e -v
+           set -e 
            export GIT_SSH_COMMAND="ssh -i /home/ubuntu/.ssh/aio_machine_user_key -o StrictHostKeyChecking=no "
-           sudo systemctl stop rc2_test || echo "stop failed" || true
+           sudo systemctl stop rc2_test || true
            timestamp=$(date -Iseconds)
            echo "$timestamp ref=${{ github.ref }} ref_name=${{ github.ref_name }}" >> CD_test_action.log
            cd RC2-hub
-           git fetch -p -P || printf "Failed with: %d" $? || true
+           git fetch -p -P 
            ref="${{github.ref}}"
            if [[ $ref == "refs/tags"* ]] ; then
-            git checkout ${{ github.ref_name }}  || printf "Failed with: %d" $? || true
+            git checkout ${{ github.ref_name }}  
            fi
            if [[ $ref == "refs/heads"* ]] ; then
-            git checkout refs/remotes/origin/${{ github.ref_name }} || printf "Failed with: %d" $? || true
+            git checkout refs/remotes/origin/${{ github.ref_name }} 
            fi
-           printf "Cleaning is requested: %s" ${{inputs.clean_before_start}}
-
            if [[ "${{ inputs.clean_before_start }}" == "true" ]]; then
             echo "Some cleaning is requested"
            fi
-           sudo systemctl start rc2_test || printf "Failed with: %d" $? || true
+           sudo systemctl start rc2_test 
          EOF
      - name: kill tunnel
        run: |
          sudo chmod 777 vpn.log
          sudo killall openvpn
-    
-        
-       
-      
+
+     - name: check liveness
+       timeout-minutes: 1
+       run: until [[ "$(curl --connect-timeout 2 -s -o /dev/null -w '%{http_code}' ${{ secrets.TEST_VM_IP }}:53020)" == "200" ]] ; do echo -n "." ; sleep 1; done 
