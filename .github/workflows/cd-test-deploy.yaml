@@ -52,7 +52,8 @@ jobs:
            if [[ "${{ inputs.clean_before_start }}" == "true" ]]; then
             echo "Some cleaning is requested"
            fi
-           sudo systemctl start rc2_test 
+           sudo systemctl start rc2_test
+           printf "End of deploy sequence. Started with code: %d \n" $?
          EOF
      - name: kill tunnel
        run: |
