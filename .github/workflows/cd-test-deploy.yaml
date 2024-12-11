@@ -37,9 +37,12 @@ jobs:
          ssh  -o StrictHostKeyChecking=no ubuntu@${{ secrets.DEMO_VM_IP }} << 'EOF'
            set -e
            export GIT_SSH_COMMAND="ssh -i /home/ubuntu/.ssh/aio_machine_user_key -o StrictHostKeyChecking=no "
-           sudo systemctl stop rc2_test
+           sudo systemctl status rc2_test
+           if [ $? = 0 ] ; then
+            sudo systemctl stop rc2_test
+           fi
            timestamp=$(date -Iseconds)
-           echo "$timestamp ref=${{ github.ref }} ref_name=${{ github.ref_name }}" >> CD_action.log
+           echo "$timestamp ref=${{ github.ref }} ref_name=${{ github.ref_name }}" >> CD_test_action.log
            cd RC2-hub
            git fetch -p -P
            ref="${{github.ref}}"
