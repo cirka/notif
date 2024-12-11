@@ -41,20 +41,20 @@ jobs:
            timestamp=$(date -Iseconds)
            echo "$timestamp ref=${{ github.ref }} ref_name=${{ github.ref_name }}" >> CD_test_action.log
            cd RC2-hub
-           git fetch -p -P || print "Failed with: %d" $? || true
+           git fetch -p -P || printf "Failed with: %d" $? || true
            ref="${{github.ref}}"
            if [[ $ref == "refs/tags"* ]] ; then
-            git checkout ${{ github.ref_name }}  || print "Failed with: %d" $? || true
+            git checkout ${{ github.ref_name }}  || printf "Failed with: %d" $? || true
            fi
            if [[ $ref == "refs/heads"* ]] ; then
-            git checkout refs/remotes/origin/${{ github.ref_name }} || print "Failed with: %d" $? || true
+            git checkout refs/remotes/origin/${{ github.ref_name }} || printf "Failed with: %d" $? || true
            fi
            printf "Cleaning is requested: %s" ${{inputs.clean_before_start}}
 
            if [[ "${{ inputs.clean_before_start }}" == "true" ]]; then
             echo "Some cleaning is requested"
            fi
-           sudo systemctl start rc2_test || print "Failed with: %d" $? || true
+           sudo systemctl start rc2_test || printf "Failed with: %d" $? || true
          EOF
      - name: kill tunnel
        run: |
