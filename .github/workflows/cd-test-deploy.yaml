@@ -53,13 +53,15 @@ jobs:
             echo "Some cleaning is requested"
            fi
            sudo systemctl start rc2_test
-           printf "End of deploy sequence. Started with code: %d \n" $?
          EOF
+
+     - name: check liveness
+       timeout-minutes: 1
+       run: until [[ "$(curl --connect-timeout 2 -s -o /dev/null -w '%{http_code}' ${{ secrets.TEST_VM_IP }}:53020)" == "200" ]] ; do echo -n "." ; sleep 1; done 
+
      - name: kill tunnel
        run: |
          sudo chmod 777 vpn.log
          sudo killall openvpn
 
-     - name: check liveness
-       timeout-minutes: 1
-       run: until [[ "$(curl --connect-timeout 2 -s -o /dev/null -w '%{http_code}' ${{ secrets.TEST_VM_IP }}:53020)" == "200" ]] ; do echo -n "." ; sleep 1; done 
+
