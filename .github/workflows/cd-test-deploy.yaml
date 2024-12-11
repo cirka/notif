@@ -1,0 +1,66 @@
+name: cd-demo-deploy
+on:
+  # Triggers the workflow on push or pull request events but only for the "main" branch
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      clean_before_start:
+        description: 'Reset database/state before deployment'
+        required: true
+        type: boolean
+        default: false
+
+jobs:
+ deploy:
+   runs-on: ubuntu-latest
+   steps:
+     - uses: actions/checkout@v4
+     - name: install openvpn
+       run: |
+         sudo apt-get update
+         sudo apt-get --assume-yes --no-install-recommends install openvpn
+
+     - name: start tunnel
+       run: echo "${{ secrets.AWS_VPN_CONFIG }}" | sudo openvpn --daemon --log "vpn.log" --config /dev/stdin
+       
+     - name: wait for vpn up
+       timeout-minutes: 1
+       run: until ping -c1 ${{ secrets.TEST_VM_IP }}; do sleep 5; done
+     
+     - name: Setup SSH Agent
+       uses: webfactory/ssh-agent@v0.9.0
+       with:
+         ssh-private-key: ${{ secrets.MACHINE_USER_SSH_KEY }}
+          
+     - name: deploy taged updates
+       run: |
+         ssh  -o StrictHostKeyChecking=no ubuntu@${{ secrets.DEMO_VM_IP }} << 'EOF'
+           set -e
+           export GIT_SSH_COMMAND="ssh -i /home/ubuntu/.ssh/aio_machine_user_key -o StrictHostKeyChecking=no "
+           sudo systemctl stop rc2_test
+           timestamp=$(date -Iseconds)
+           echo "$timestamp ref=${{ github.ref }} ref_name=${{ github.ref_name }}" >> CD_action.log
+           cd RC2-hub
+           git fetch -p -P
+           ref="${{github.ref}}"
+           if [[ $ref == "refs/tags"* ]] ; then
+            git checkout ${{ github.ref_name }} 
+           fi
+           if [[ $ref == "refs/heads"* ]] ; then
+            git checkout refs/remotes/origin/${{ github.ref_name }}
+           fi
+           printf "Cleaning is requested: %s" ${{inputs.clean_before_start}}
+
+           if [[ "${{ inputs.clean_before_start }}" == "true" ]]; then
+            echo "Some cleaning is requested"
+           fi
+           sudo systemctl start rc2_test
+         EOF
+     - name: kill tunnel
+       run: |
+         sudo chmod 777 vpn.log
+         sudo killall openvpn
+    
+        
+       
+      
