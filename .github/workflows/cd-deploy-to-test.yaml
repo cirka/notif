@@ -1,24 +1,28 @@
-name: cd-test-deploy
+name: cd-deploy-to-test-dev
 on:
   # Triggers the workflow on push or pull request events but only for the "main" branch
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
     inputs:
-      clean_before_start:
-        description: 'Reset database/state before deployment'
+      fate_of_state:
+        description: 'What would you like to do with persistant data during deployment?'
         required: true
-        type: boolean
-        default: false
+        type: choice
+        options:
+          - leave_persistant_data
+          - delete_persistant_data
+          - delete_persistant_data_and_load_sample_data
+        default: 'leave_persistant_data'
 
 jobs:
  deploy:
    runs-on: ubuntu-latest
    steps:
      - uses: actions/checkout@v4
-     - name: install openvpn
+     - name: install openvpn and curl
        run: |
          sudo apt-get update
-         sudo apt-get --assume-yes --no-install-recommends install openvpn
+         sudo apt-get --assume-yes --no-install-recommends install openvpn curl
 
      - name: start tunnel
        run: echo "${{ secrets.AWS_VPN_CONFIG }}" | sudo openvpn --daemon --log "vpn.log" --config /dev/stdin
@@ -35,32 +39,35 @@ jobs:
      - name: deploy taged updates
        run: |
          ssh  -o StrictHostKeyChecking=no ubuntu@${{ secrets.TEST_VM_IP }} << 'EOF'
-           set -e -v
+           set -e 
            export GIT_SSH_COMMAND="ssh -i /home/ubuntu/.ssh/aio_machine_user_key -o StrictHostKeyChecking=no "
-           sudo systemctl stop rc2_test || echo "stop failed" || true
+           sudo systemctl stop rc2_test || true
            timestamp=$(date -Iseconds)
-           echo "$timestamp ref=${{ github.ref }} ref_name=${{ github.ref_name }}" >> CD_test_action.log
+           echo "$timestamp ref=${{ github.ref }} ref_name=${{ github.ref_name }} cleaning_required=${{ inputs.fate_of_state }}" >> CD_test_action.log
            cd RC2-hub
-           git fetch -p -P || print "Failed with: %d" $? || true
+           git fetch -p -P 
            ref="${{github.ref}}"
            if [[ $ref == "refs/tags"* ]] ; then
-            git checkout ${{ github.ref_name }}  || print "Failed with: %d" $? || true
+            git checkout ${{ github.ref_name }}  
            fi
            if [[ $ref == "refs/heads"* ]] ; then
-            git checkout refs/remotes/origin/${{ github.ref_name }} || print "Failed with: %d" $? || true
+            git checkout refs/remotes/origin/${{ github.ref_name }} 
            fi
-           printf "Cleaning is requested: %s" ${{inputs.clean_before_start}}
-
-           if [[ "${{ inputs.clean_before_start }}" == "true" ]]; then
+           if [[ "${{ inputs.fate_of_state }}" != "leave_persistant_data" ]]; then
             echo "Some cleaning is requested"
+            sudo /home/ubuntu/RC2/rc2_test_state_reset.sh
            fi
-           sudo systemctl start rc2_test || print "Failed with: %d" $? || true
+           sudo systemctl start rc2_test
+           if [[ "${{ inputs.fate_of_state }}" == "delete_persistant_data_and_load_sample_data" ]]; then
+            echo "Some sample data shoul be loaded"
+            ./tools/scripts/demo_env_prep.sh 
+           fi
+ 
          EOF
+         
      - name: kill tunnel
        run: |
          sudo chmod 777 vpn.log
          sudo killall openvpn
-    
-        
-       
-      
+
+
