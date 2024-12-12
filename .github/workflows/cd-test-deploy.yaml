@@ -51,6 +51,7 @@ jobs:
            fi
            if [[ "${{ inputs.clean_before_start }}" == "true" ]]; then
             echo "Some cleaning is requested"
+            sudo /home/ubuntu/RC2/rc2_test_state_reset.sh
            fi
            sudo systemctl start rc2_test
          EOF
