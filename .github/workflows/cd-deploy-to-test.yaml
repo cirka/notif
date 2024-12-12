@@ -59,7 +59,7 @@ jobs:
            fi
            sudo systemctl start rc2_test
            if [[ "${{ inputs.fate_of_state }}" == "delete_persistant_data_and_load_sample_data" ]]; then
-            echo "Some sample data shoul be loaded"
+            echo "Sample data should be loaded"
             ./tools/scripts/demo_env_prep.sh 
            fi
  
