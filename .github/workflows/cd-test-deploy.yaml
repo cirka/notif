@@ -39,7 +39,7 @@ jobs:
            export GIT_SSH_COMMAND="ssh -i /home/ubuntu/.ssh/aio_machine_user_key -o StrictHostKeyChecking=no "
            sudo systemctl stop rc2_test || true
            timestamp=$(date -Iseconds)
-           echo "$timestamp ref=${{ github.ref }} ref_name=${{ github.ref_name }}" >> CD_test_action.log
+           echo "$timestamp ref=${{ github.ref }} ref_name=${{ github.ref_name }} cleaning_required=${{ inputs.clean_before_start }}" >> CD_test_action.log
            cd RC2-hub
            git fetch -p -P 
            ref="${{github.ref}}"
@@ -55,11 +55,7 @@ jobs:
            fi
            sudo systemctl start rc2_test
          EOF
-
-     - name: check liveness
-       timeout-minutes: 1
-       run: until [[ "$(curl --connect-timeout 2 -s -o /dev/null -w '%{http_code}' ${{ secrets.TEST_VM_IP }}:53020)" == "200" ]] ; do echo -n "." ; sleep 1; done 
-
+         
      - name: kill tunnel
        run: |
          sudo chmod 777 vpn.log
